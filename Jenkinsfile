@@ -2,7 +2,7 @@ pipeline {
   agent {
     docker {
       image 'abhishekf5/maven-abhishek-docker-agent:v1'
-      args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+      args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // Mount Docker socket to access the host's Docker daemon
     }
   }
   stages {
@@ -16,8 +16,8 @@ pipeline {
     }
     stage('Build and Test') {
       steps {
-        // Navigate to the correct directory dynamically
-        sh 'cd $(ls -d spring*) && ./mvnw jetty:run-war'
+        // Run the build and test commands
+        sh './mvnw jetty:run-war'
       }
     }
     stage('Static Code Analysis') {
@@ -26,7 +26,7 @@ pipeline {
       }
       steps {
         withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
-          sh 'cd $(ls -d spring*) && mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
+          sh './mvnw sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
         }
       }
     }
@@ -37,7 +37,7 @@ pipeline {
       }
       steps {
         script {
-          sh 'cd $(ls -d spring*) && docker build -t ${DOCKER_IMAGE} .'
+          sh 'docker build -t ${DOCKER_IMAGE} .'
           def dockerImage = docker.image("${DOCKER_IMAGE}")
           docker.withRegistry('https://index.docker.io/v1/', "docker-cred") {
             dockerImage.push()
@@ -56,8 +56,8 @@ pipeline {
               git config user.email "sridhar4597@gmail.com"
               git config user.name "Sr1dhar4597"
               BUILD_NUMBER=${BUILD_NUMBER}
-              sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" spring-framework-petclinic/Petclinic-app-manifests/deployment.yml
-              git add spring-framework-petclinic/Petclinic-app-manifests/deployment.yml
+              sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" Petclinic-app-manifests/deployment.yml
+              git add Petclinic-app-manifests/deployment.yml
               git commit -m "Update deployment image to version ${BUILD_NUMBER}"
               git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
           '''
